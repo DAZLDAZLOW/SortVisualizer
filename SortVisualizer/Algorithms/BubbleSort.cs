@@ -10,11 +10,15 @@ namespace SortVisualizer.Algorithms
 {
     internal class BubbleSort : ISortAlgorithm
     {
-        public string Title { get { return "Bubble Sort"; } }
-
-        public void Sort(object ArrayObj)
+        //-------------------ISortAlgoritm Implementation---------------
+        public string Title { get { return "Bubble Sort"; } } 
+        WaitDelegate ISortAlgorithm.Wait { get => wait; set => wait += value; } 
+        WaitDelegate wait; 
+        public event Action OnRedraw; 
+        public event Action OnSortDone;
+        //--------------------------------------------------------------
+        public async Task Sort(int[] Array)
         {
-            int[] Array = (int[])ArrayObj;
             int temp;
             for (int i = 0; i < Array.Length; i++)
             {
@@ -25,14 +29,13 @@ namespace SortVisualizer.Algorithms
                         temp = Array[i];
                         Array[i] = Array[j];
                         Array[j] = temp;
-                        MainWindow.SingleTon.Dispatcher.Invoke(() => { MainWindow.SingleTon.Swap(i, j); });
-                        if ((MainWindow.SingleTon.SortSpeed) < 1000)
-                            Thread.Sleep((int)(1000 / MainWindow.SingleTon.SortSpeed));
+                        OnRedraw();//ISortAlgoritm Implementation
+                        await wait(); //ISortAlgoritm Implementation
                     }
                 }
             }
-            MainWindow.SingleTon.Dispatcher.Invoke(() => { MainWindow.SingleTon.SortIsDone(); });
-            
+            OnSortDone(); //ISortAlgoritm Implementation
         }
+
     }
 }

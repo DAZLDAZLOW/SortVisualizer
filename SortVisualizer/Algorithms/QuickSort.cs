@@ -9,13 +9,18 @@ namespace SortVisualizer.Algorithms
 {
     internal class QuickSort : ISortAlgorithm
     {
-        public string Title { get { return "Quick Sort"; } }
+        //-------------------ISortAlgoritm Implementation---------------
+        public string Title { get { return "Quick Sort"; } } 
+        WaitDelegate ISortAlgorithm.Wait { get => wait; set => wait += value; } 
+        WaitDelegate wait; 
+        public event Action OnRedraw;  
+        public event Action OnSortDone;
+        //--------------------------------------------------------------
 
-        public void Sort(object ArrayObj)
+        public async Task Sort(int[] Array)
         {
-            int[] Array = (int[])ArrayObj;
-            QuickSortA(Array, 0, Array.Length - 1);
-            MainWindow.SingleTon.Dispatcher.Invoke(() => { MainWindow.SingleTon.SortIsDone(); });
+            await QuickSortA(Array, 0, Array.Length - 1);
+            OnSortDone(); //ISortAlgoritm Implementation
         }
 
         private void SwapTwo(ref int x, ref int y)
@@ -25,7 +30,7 @@ namespace SortVisualizer.Algorithms
             y = t;
         }
 
-        private int Partition(int[] Array, int minIndex, int maxIndex)
+        private async Task<int> Partition(int[] Array, int minIndex, int maxIndex)
         {
             var pivot = minIndex - 1;
             for (var i = minIndex; i < maxIndex; i++)
@@ -33,30 +38,28 @@ namespace SortVisualizer.Algorithms
                 if (Array[i] < Array[maxIndex])
                 {
                     pivot++;
-                    MainWindow.SingleTon.Dispatcher.Invoke(() => { MainWindow.SingleTon.Swap(pivot, i); });
+                    OnRedraw();
                     SwapTwo(ref Array[pivot], ref Array[i]);
-                    if ((MainWindow.SingleTon.SortSpeed) < 1000)
-                        Thread.Sleep((int)(1000 / MainWindow.SingleTon.SortSpeed));
+                    await wait();
                 }
             }
 
             pivot++;
-            MainWindow.SingleTon.Dispatcher.Invoke(() => { MainWindow.SingleTon.Swap(pivot, maxIndex); });
-            if ((MainWindow.SingleTon.SortSpeed) < 1000)
-                Thread.Sleep((int)(1000 / MainWindow.SingleTon.SortSpeed));
+            OnRedraw(); //ISortAlgoritm Implementation
+            await wait(); //ISortAlgoritm Implementation
             SwapTwo(ref Array[pivot], ref Array[maxIndex]);
             return pivot;
         }
 
-        private int[] QuickSortA(int[] Array, int minIndex, int maxIndex)
+        private async Task<int[]> QuickSortA(int[] Array, int minIndex, int maxIndex)
         {
             if (minIndex >= maxIndex)
             {
                 return Array;
             }
-            var pivotIndex = Partition(Array, minIndex, maxIndex);
-            QuickSortA(Array, minIndex, pivotIndex - 1);
-            QuickSortA(Array, pivotIndex + 1, maxIndex);
+            var pivotIndex = await Partition(Array, minIndex, maxIndex);
+            await QuickSortA(Array, minIndex, pivotIndex - 1);
+            await QuickSortA(Array, pivotIndex + 1, maxIndex);
             return Array;
         }
     }

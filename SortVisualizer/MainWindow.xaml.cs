@@ -20,142 +20,106 @@ namespace SortVisualizer
 {
     public partial class MainWindow : Window
     {
-        public static MainWindow SingleTon;
-        public VisualHost DrawHost = new();
-        public int ArraySize = 100;
-        public int SortSpeed = 100;
-        public int[] NumbersForSort;
-        public bool IsSorted;
-        public long TotalSwaped = 0;
-        private int SortMethod;
-        private List<ISortAlgorithm> SortAlgorithms = new();
+        public VisualHost drawHost = new();
+        private readonly SortHost Host;
+        private int arraySize = 100;
+        public bool isSorted = true;
         public MainWindow()
         {
             InitializeComponent();
+            Host = new SortHost(100);
+            Host.OnSortDone += Host_OnSortDone;
+            Host.OnRedraw += Host_OnRedraw;
             SortListInitialize();
-            SingleTon = this;
-            NumbersForSort = new int[ArraySize];
-            for (int i = 0; i < NumbersForSort.Length; i++)
-            {
-                NumbersForSort[i] = i + 1;
-            }
-            IsSorted = true;
-            ArraySizeTextBox.Text = ArraySize.ToString(); 
-            ToDrawArea.Children.Add(DrawHost);
-            DrawArray();
+            ArraySizeTextBox.Text = arraySize.ToString();
+            ToDrawArea.Children.Add(drawHost);
+            Host_OnRedraw(Host.GetArray());
         }
 
         private void SortListInitialize()
         {
-            //---Insert-your-Algorithms-here:---
-            SortAlgorithms.Add(new BubbleSort());
-            SortAlgorithms.Add(new QuickSort());
-            SortAlgorithms.Add(new MergeSort());
-
-
-            //---------------------------------
-            SortAlgorithms = SortAlgorithms.OrderBy(a => a.Title).ToList();
-            foreach(ISortAlgorithm algorithm in SortAlgorithms)
+            foreach (string Name in Host.GetAlgorithmNames())
             {
-                SortListBox.Items.Add(algorithm.Title);
+                SortListBox.Items.Add(Name);
             }
-            SortMethod = 0;
             SortListBox.SelectedIndex = 0;
         }
 
-        public void Swap(int IndexA, int IndexB)
+        private void Host_OnRedraw(int[] array)
         {
-            SwapsLabel.Content = ++TotalSwaped;
-            DrawArray();
-        }
-
-        public void DrawArray()
-        {
-            double LineWithSpaceSize = ToDrawArea.ActualWidth / NumbersForSort.Length;
+            double lineWithSpaceSize = ToDrawArea.ActualWidth / array.Length;
             DrawingVisual drawingVisual = new DrawingVisual();
             DrawingContext drawingContext = drawingVisual.RenderOpen();
-            for (int i = 0; i < NumbersForSort.Length; i++)
+            for (int i = 0; i < array.Length; i++)
             {
-                drawingContext.DrawLine(new Pen(Brushes.White, LineWithSpaceSize / 2), new Point(i * LineWithSpaceSize, ToDrawArea.ActualHeight),
-                    new Point(i * LineWithSpaceSize, ToDrawArea.ActualHeight - NumbersForSort[i] * ToDrawArea.ActualHeight / NumbersForSort.Length));
+                drawingContext.DrawLine(new Pen(Brushes.White, lineWithSpaceSize / 2), new Point(i * lineWithSpaceSize, ToDrawArea.ActualHeight),
+                    new Point(i * lineWithSpaceSize, ToDrawArea.ActualHeight - array[i] * ToDrawArea.ActualHeight / array.Length));
             }
             drawingContext.Close();
-            DrawHost.ChangeVisual(drawingVisual);
+            drawHost.ChangeVisual(drawingVisual);
+            SwapsLabel.Content = Host.TotalSwaps;
         }
 
-        public void SortIsDone()
+        private void Host_OnSortDone()
         {
             SortButton.IsEnabled = true;
             UnsortButton.IsEnabled = true;
             SortListBox.IsEnabled = true;
             ChangeArraySize.IsEnabled = true;
-            IsSorted = true;
+            isSorted = true;
         }
 
         private async void SortButton_Click(object sender, RoutedEventArgs e)
         {
-            TotalSwaped = 0;
-            if (!IsSorted)
+            if (!isSorted)
             {
                 ChangeArraySize.IsEnabled = false;
                 SortButton.IsEnabled = false;
                 UnsortButton.IsEnabled = false;
                 SortListBox.IsEnabled = false;
-                Thread thread = new Thread(new ParameterizedThreadStart(SortAlgorithms[SortMethod].Sort));
-                thread.Start(NumbersForSort);
+                Host.StartSort();
             }
-            
         }
 
         private void UnsortButton_Click(object sender, RoutedEventArgs e)
         {
-            Random rnd = new Random();
-            for (int i = NumbersForSort.Length - 1; i >= 1; i--)
-            {
-                int j = rnd.Next(i + 1);
-
-                int tmp = NumbersForSort[j];
-                NumbersForSort[j] = NumbersForSort[i];
-                NumbersForSort[i] = tmp;
-            }
-            DrawArray();
-            IsSorted = false;
+            Host.Unsort();
+            isSorted = false;
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            DrawArray();
+            Host_OnRedraw(Host.GetArray());
         }
 
         private void SpeedDownButton_Click(object sender, RoutedEventArgs e)
         {
-            switch (SortSpeed)
+            switch (Host.SortSpeed)
             {
                 case 10:
                     return;
-                    break;
                 case 25:
-                    SortSpeed = 10;
+                    Host.SortSpeed = 10;
                     SpeedLabel.Content = "0.10";
                     break;
                 case 50:
-                    SortSpeed = 25;
+                    Host.SortSpeed = 25;
                     SpeedLabel.Content = "0.25";
                     break;
                 case 100:
-                    SortSpeed = 50;
+                    Host.SortSpeed = 50;
                     SpeedLabel.Content = "0.50";
                     break;
                 case 200:
-                    SortSpeed = 100;
+                    Host.SortSpeed = 100;
                     SpeedLabel.Content = "1.00";
                     break;
                 case 500:
-                    SortSpeed = 200;
+                    Host.SortSpeed = 200;
                     SpeedLabel.Content = "2.00";
                     break;
                 case 1000:
-                    SortSpeed = 500;
+                    Host.SortSpeed = 500;
                     SpeedLabel.Content = "5.00";
                     break;
             }
@@ -163,30 +127,30 @@ namespace SortVisualizer
 
         private void SpeedUpButton_Click(object sender, RoutedEventArgs e)
         {
-            switch (SortSpeed)
+            switch (Host.SortSpeed)
             {
                 case 10:
-                    SortSpeed = 25;
+                    Host.SortSpeed = 25;
                     SpeedLabel.Content = "0.25";
                     break;
                 case 25:
-                    SortSpeed = 50;
+                    Host.SortSpeed = 50;
                     SpeedLabel.Content = "0.50";
                     break;
                 case 50:
-                    SortSpeed = 100;
+                    Host.SortSpeed = 100;
                     SpeedLabel.Content = "1.00";
                     break;
                 case 100:
-                    SortSpeed = 200;
+                    Host.SortSpeed = 200;
                     SpeedLabel.Content = "2.00";
                     break;
                 case 200:
-                    SortSpeed = 500;
+                    Host.SortSpeed = 500;
                     SpeedLabel.Content = "5.00";
                     break;
                 case 500:
-                    SortSpeed = 1000;
+                    Host.SortSpeed = 1000;
                     SpeedLabel.Content = "10";
                     break;
                 case 1000:
@@ -196,7 +160,7 @@ namespace SortVisualizer
 
         private void SortListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            SortMethod = SortListBox.SelectedIndex;
+            Host.ChangeSortAlgoritm(SortListBox.SelectedIndex);
         }
 
         private void ChangeArraySize_Click(object sender, RoutedEventArgs e)
@@ -205,7 +169,7 @@ namespace SortVisualizer
             if(input == "")
             {
                 MessageBox.Show("Print number into textbox!", "Error");
-                ArraySizeTextBox.Text = ArraySize.ToString();
+                ArraySizeTextBox.Text = arraySize.ToString();
                 return;
             }
             if(Convert.ToInt32(input)>= 1000)
@@ -213,13 +177,8 @@ namespace SortVisualizer
                 MessageBox.Show("Sorting large arrays can take a long time!", "Worning!");
             }
             ArraySizeTextBox.Text = input;
-            ArraySize = Convert.ToInt32(input);
-            NumbersForSort = new int[ArraySize];
-            for (int i = 0; i < NumbersForSort.Length; i++)
-            {
-                NumbersForSort[i] = i + 1;
-            }
-            DrawArray();
+            arraySize = Convert.ToInt32(input);
+            Host.CreateArray(arraySize);
         }
     }
 }

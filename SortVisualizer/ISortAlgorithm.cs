@@ -1,8 +1,15 @@
-﻿namespace SortVisualizer
+﻿using System;
+using System.Threading.Tasks;
+
+namespace SortVisualizer
 {
     public interface ISortAlgorithm
     {
-        public string Title { get; }
-        public void Sort(object ArrayObj);// ArrayObj is object for Thread capability
+        string Title { get; }
+        event Action OnRedraw;
+        event Action OnSortDone;
+        WaitDelegate Wait { get; set; }  
+        Task Sort(int[] Array);
     }
+    public delegate Task WaitDelegate();
 }

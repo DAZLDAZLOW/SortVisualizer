@@ -23,6 +23,10 @@
                                 <Setter TargetName="ButtonSurface" Property="Fill" Value="Gray"/>
                                 <Setter TargetName="ButtonContent" Property="Foreground" Value="White"/>
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonSurface" Property="Fill" Value="Gray"/>
+                                <Setter TargetName="ButtonSurface" Property="Stroke" Value="White"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
